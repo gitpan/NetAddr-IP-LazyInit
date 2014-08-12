@@ -2,9 +2,9 @@ package NetAddr::IP::LazyInit;
 
 use strict;
 use warnings;
-use NetAddr::IP;
+use NetAddr::IP qw( :lower );
 
-our $VERSION = eval '0.1';
+our $VERSION = eval '0.2';
 
 =head1 NAME
 
@@ -12,7 +12,7 @@ NetAddr::IP::LazyInit - NetAddr::IP objects with deferred validation B<SEE DESCR
 
 =head1 VERSION
 
-0.1
+0.2
 
 =head1 SYNOPSIS
 
@@ -80,9 +80,17 @@ sub isa { $_[1] eq 'NetAddr::IP'; }
 sub addr {
     my $self = shift;
     if ($self->{x}->[0] =~ /^(.*?)(?:\/|$)/) {
-        return uc($1);
+        return lc($1);
     }
 }
+
+use overload (
+    '""' => sub { $_[0]->{x}->[0] =~ m#/# ? $_[0]->{x}->[0] : $_[0]->inflate->cidr() },
+    'eq' => sub {
+        my $a = $_[0]->inflate;
+        return ($a eq $_[1]);
+    },
+);
 
 sub AUTOLOAD {
   my $self = shift;
@@ -91,6 +99,13 @@ sub AUTOLOAD {
   bless $self, 'NetAddr::IP';
   our $AUTOLOAD =~ /::(\w+)$/;
   $self->$1(@_);
+}
+
+sub inflate {
+    my $self = shift;
+    my $obj = NetAddr::IP->new(@{ $self->{x} });
+    %$self = %$obj;
+    bless $self, 'NetAddr::IP';
 }
 
 1;

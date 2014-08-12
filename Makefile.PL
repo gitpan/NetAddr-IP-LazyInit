@@ -22,6 +22,7 @@ my %WriteMakefileArgs = (
   "NAME" => "NetAddr::IP::LazyInit",
   "PREREQ_PM" => {
     "NetAddr::IP" => 0,
+    "overload" => 0,
     "strict" => 0,
     "warnings" => 0
   },
@@ -29,7 +30,7 @@ my %WriteMakefileArgs = (
     "Test::More" => 0,
     "lib" => 0
   },
-  "VERSION" => "0.1",
+  "VERSION" => "0.2",
   "test" => {
     "TESTS" => "t/*.t"
   }
@@ -40,6 +41,7 @@ my %FallbackPrereqs = (
   "NetAddr::IP" => 0,
   "Test::More" => 0,
   "lib" => 0,
+  "overload" => 0,
   "strict" => 0,
   "warnings" => 0
 );
