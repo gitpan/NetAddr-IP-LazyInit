@@ -23,4 +23,4 @@ resources:
   bugtracker: https://github.com/rfdrake/NetAddr-IP-LazyInit/issues
   homepage: http://search.cpan.org/dist/NetAddr-IP-LazyInit
   repository: git://github.com/rfdrake/NetAddr-IP-LazyInit.git
-version: '0.2'
+version: '0.3'
