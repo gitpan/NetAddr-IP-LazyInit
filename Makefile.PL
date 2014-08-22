@@ -21,16 +21,19 @@ my %WriteMakefileArgs = (
   "LICENSE" => "perl",
   "NAME" => "NetAddr::IP::LazyInit",
   "PREREQ_PM" => {
+    "Exporter" => 0,
     "NetAddr::IP" => 0,
+    "NetAddr::IP::Util" => 0,
     "overload" => 0,
     "strict" => 0,
     "warnings" => 0
   },
   "TEST_REQUIRES" => {
+    "Storable" => 0,
     "Test::More" => 0,
     "lib" => 0
   },
-  "VERSION" => "0.3",
+  "VERSION" => "0.4",
   "test" => {
     "TESTS" => "t/*.t"
   }
@@ -38,7 +41,10 @@ my %WriteMakefileArgs = (
 
 
 my %FallbackPrereqs = (
+  "Exporter" => 0,
   "NetAddr::IP" => 0,
+  "NetAddr::IP::Util" => 0,
+  "Storable" => 0,
   "Test::More" => 0,
   "lib" => 0,
   "overload" => 0,

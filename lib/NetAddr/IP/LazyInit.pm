@@ -2,9 +2,10 @@ package NetAddr::IP::LazyInit;
 
 use strict;
 use warnings;
-use NetAddr::IP qw( :lower );
+use NetAddr::IP qw(Zero Zeros Ones V4mask V4net netlimit);
+use NetAddr::IP::Util;
 
-our $VERSION = eval '0.3';
+our $VERSION = eval '0.4';
 
 =head1 NAME
 
@@ -12,7 +13,7 @@ NetAddr::IP::LazyInit - NetAddr::IP objects with deferred validation B<SEE DESCR
 
 =head1 VERSION
 
-0.3
+0.4
 
 =head1 SYNOPSIS
 
@@ -70,13 +71,29 @@ at your option, any later version of Perl 5 you may have available.
 
 =cut
 
-
+require Exporter;
+our @ISA = qw(Exporter);
+our @EXPORT_OK = qw(Compact Coalesce Zero Zeros Ones V4mask V4net netlimit);
 
 sub new { my $class = shift; bless {x=>[@_]}, $class }
 
 sub can { NetAddr::IP->can($_[1]); }
 
-sub isa { $_[1] eq 'NetAddr::IP'; }
+sub Compact {
+    for (@_) {
+        $_->inflate if (ref($_) eq 'NetAddr::IP::LazyInit');
+    }
+    return NetAddr::IP::Compact(@_);
+}
+
+
+
+sub Coalesce {
+    for (@_) {
+        $_->inflate if (ref($_) eq 'NetAddr::IP::LazyInit');
+    }
+    return NetAddr::IP::Coalesce(@_);
+}
 
 sub addr {
     my $self = shift;
@@ -85,13 +102,99 @@ sub addr {
     }
 }
 
+sub mask {
+    my $self = shift;
+    if ($self->{x}->[1] && $self->{x}->[1] =~ /\D/) {
+        return $self->{x}->[1];
+    } else {
+        return $self->inflate->mask;
+    }
+}
+
+sub import {
+    if (grep { $_ eq ':rfc3021' } @_)
+    {
+        $NetAddr::IP::rfc3021 = 1;
+        @_ = grep { $_ ne ':rfc3021' } @_;
+    }
+    if (grep { $_ eq ':old_storable' } @_) {
+        @_ = grep { $_ ne ':old_storable' } @_;
+    }
+    if (grep { $_ eq ':old_nth' } @_)
+    {
+        $NetAddr::IP::Lite::Old_nth = 1;
+        @_ = grep { $_ ne ':old_nth' } @_;
+    }
+    if (grep { $_ eq ':lower' } @_)
+    {
+        NetAddr::IP::Util::lower();
+        @_ = grep { $_ ne ':lower' } @_;
+    }
+    if (grep { $_ eq ':upper' } @_)
+    {
+        NetAddr::IP::Util::upper();
+        @_ = grep { $_ ne ':upper' } @_;
+    }
+
+  NetAddr::IP::LazyInit->export_to_level(1, @_);
+}
+
+# need to support everything that NetAddr::IP does
 use overload (
-    '""' => sub { $_[0]->{x}->[0] =~ m#/# ? $_[0]->{x}->[0] : $_[0]->inflate->cidr() },
-    'eq' => sub {
-        my $a = $_[0]->inflate;
-        return ($a eq $_[1]);
+    '@{}'   => sub { return [ $_[0]->inflate->hostenum ]; },
+    '""'    => sub { return $_[0]->inflate->cidr() },
+    '<=>'   => sub { inflate_args_and_run(\&NetAddr::IP::Lite::comp_addr_mask, @_); },
+    'cmp'   => sub { inflate_args_and_run(\&NetAddr::IP::Lite::comp_addr_mask, @_); },
+    '++'    => sub { inflate_args_and_run(\&NetAddr::IP::Lite::plusplus, @_); },
+    '+'     => sub { inflate_args_and_run(\&NetAddr::IP::Lite::plus, @_); },
+    '--'    => sub { inflate_args_and_run(\&NetAddr::IP::Lite::minusminus, @_); },
+    '-'     => sub { inflate_args_and_run(\&NetAddr::IP::Lite::minus, @_); },
+    '='     => sub { inflate_args_and_run(\&NetAddr::IP::Lite::copy, @_); },
+    '=='    => sub {
+        my $a = $_[0];
+        $a->inflate if ref($_[0]) =~ /NetAddr::IP::LazyInit/;
+        my $b = $_[1];
+        $b->inflate if ref($_[1]) =~ /NetAddr::IP::LazyInit/;
+        return ($a eq $b);
     },
+    '!='    => sub {
+        my $a = $_[0];
+        $a->inflate if ref($_[0]) eq 'NetAddr::IP::LazyInit';
+        my $b = $_[1];
+        $b->inflate if ref($_[1]) eq 'NetAddr::IP::LazyInit';
+        return ($a ne $b);
+    },
+    'ne'    => sub {
+        my $a = $_[0];
+        $a->inflate if ref($_[0]) eq 'NetAddr::IP::LazyInit';
+        my $b = $_[1];
+        $b->inflate if ref($_[1]) eq 'NetAddr::IP::LazyInit';
+        return ($a ne $b);
+    },
+    'eq'    => sub {
+        my $a = $_[0];
+        $a->inflate if ref($_[0]) eq 'NetAddr::IP::LazyInit';
+        my $b = $_[1];
+        $b->inflate if ref($_[1]) eq 'NetAddr::IP::LazyInit';
+        return ($a eq $b);
+    },
+    '>'     => sub { return &comp_addr_mask > 0 ? 1 : 0; },
+    '<'     => sub { return &comp_addr_mask < 0 ? 1 : 0; },
+    '>='    => sub { return &comp_addr_mask < 0 ? 0 : 1; },
+    '<='    => sub { return &comp_addr_mask > 0 ? 0 : 1; },
+
 );
+
+sub comp_addr_mask {
+    return inflate_args_and_run(\&NetAddr::IP::Lite::comp_addr_mask, @_);
+}
+
+sub inflate_args_and_run {
+    my $func = shift;
+    $_[0]->inflate if ref($_[0]) eq 'NetAddr::IP::LazyInit';
+    $_[1]->inflate if ref($_[1]) eq 'NetAddr::IP::LazyInit';
+    return &{$func}(@_);
+}
 
 sub AUTOLOAD {
   my $self = shift;
@@ -99,14 +202,16 @@ sub AUTOLOAD {
   %$self = %$obj;
   bless $self, 'NetAddr::IP';
   our $AUTOLOAD =~ /::(\w+)$/;
-  $self->$1(@_);
+  return $self->$1(@_);
 }
 
 sub inflate {
     my $self = shift;
+    my $method = shift;
     my $obj = NetAddr::IP->new(@{ $self->{x} });
     %$self = %$obj;
     bless $self, 'NetAddr::IP';
+    return $method ? $self->method( @_ ) : $self;
 }
 
 1;
