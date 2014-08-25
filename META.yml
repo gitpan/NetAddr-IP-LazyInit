@@ -19,6 +19,7 @@ requires:
   Exporter: '0'
   NetAddr::IP: '0'
   NetAddr::IP::Util: '0'
+  Socket: '0'
   overload: '0'
   strict: '0'
   warnings: '0'
@@ -26,4 +27,4 @@ resources:
   bugtracker: https://github.com/rfdrake/NetAddr-IP-LazyInit/issues
   homepage: http://search.cpan.org/dist/NetAddr-IP-LazyInit
   repository: git://github.com/rfdrake/NetAddr-IP-LazyInit.git
-version: '0.4'
+version: '0.5'

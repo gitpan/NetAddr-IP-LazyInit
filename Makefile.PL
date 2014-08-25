@@ -24,6 +24,7 @@ my %WriteMakefileArgs = (
     "Exporter" => 0,
     "NetAddr::IP" => 0,
     "NetAddr::IP::Util" => 0,
+    "Socket" => 0,
     "overload" => 0,
     "strict" => 0,
     "warnings" => 0
@@ -33,7 +34,7 @@ my %WriteMakefileArgs = (
     "Test::More" => 0,
     "lib" => 0
   },
-  "VERSION" => "0.4",
+  "VERSION" => "0.5",
   "test" => {
     "TESTS" => "t/*.t"
   }
@@ -44,6 +45,7 @@ my %FallbackPrereqs = (
   "Exporter" => 0,
   "NetAddr::IP" => 0,
   "NetAddr::IP::Util" => 0,
+  "Socket" => 0,
   "Storable" => 0,
   "Test::More" => 0,
   "lib" => 0,
