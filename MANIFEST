@@ -6,10 +6,8 @@ Makefile.PL
 README
 dist.ini
 examples/benchmark.pl
-examples/ipv6_benchmarks.pl
 lib/NetAddr/IP/LazyInit.pm
 t/10-addr.t
-t/10-new_ipv4.t
 t/10-overload.t
 t/canon.t
 t/constants.t
